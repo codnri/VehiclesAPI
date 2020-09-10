@@ -2,11 +2,16 @@ package com.udacity.vehicles.service;
 
 import com.udacity.vehicles.client.maps.MapsClient;
 import com.udacity.vehicles.client.prices.PriceClient;
+import com.udacity.vehicles.domain.Location;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.CarRepository;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.udacity.vehicles.domain.manufacturer.Manufacturer;
+import com.udacity.vehicles.domain.manufacturer.ManufacturerRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -23,13 +28,15 @@ public class CarService {
     private final CarRepository repository;
     private final MapsClient mapsClient;
     private final PriceClient pricesClient;
+    private final ManufacturerRepository manufacturerRepository;
     public CarService(CarRepository repository, @Qualifier("maps") WebClient mapsWebClient, ModelMapper modelMapper,
-                      @Qualifier("pricing") WebClient  pricesWebClient) {
+                      @Qualifier("pricing") WebClient pricesWebClient, ManufacturerRepository manufacturerRepository) {
         /**
          * TODO: Add the Maps and Pricing Web Clients you create
          *   in `VehiclesApiApplication` as arguments and set them here.
          */
         this.repository = repository;
+        this.manufacturerRepository = manufacturerRepository;
         this.mapsClient = new MapsClient(mapsWebClient,modelMapper);
         this.pricesClient = new PriceClient(pricesWebClient);
     }
@@ -89,15 +96,19 @@ public class CarService {
         if (car.getId() != null) {
             return repository.findById(car.getId())
                     .map(carToBeUpdated -> {
+                        carToBeUpdated.setCondition(car.getCondition());
                         carToBeUpdated.setDetails(car.getDetails());
                         carToBeUpdated.setLocation(car.getLocation());
-                        carToBeUpdated.setCondition(car.getCondition());
                         return repository.save(carToBeUpdated);
                     }).orElseThrow(CarNotFoundException::new);
         }
+        Manufacturer manufacturer = car.getDetails().getManufacturer();
+        manufacturerRepository.save(manufacturer);
+
 
         return repository.save(car);
     }
+
 
     /**
      * Deletes a given car by ID
