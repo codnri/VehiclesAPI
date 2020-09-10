@@ -4,9 +4,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -149,6 +147,24 @@ public class CarControllerTest {
         Car car = carService.save(getCar());
         mvc.perform(delete("/cars/" + car.getId()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void updateCar() throws Exception {
+        Car car = carService.save(getCar());
+        car.setCondition(Condition.USED);
+        car.setPrice("9999");
+        car.getLocation().setState("Ontario");
+
+        mvc.perform(put("/cars/" + car.getId())
+                .content(json.write(car).getJson())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(car.getId()))
+                .andExpect(jsonPath("$.price").value("9999"))
+                .andExpect(jsonPath("$.condition").value("USED"))
+                .andExpect(jsonPath("$.location.state").value("Ontario"));
     }
 
     /**
